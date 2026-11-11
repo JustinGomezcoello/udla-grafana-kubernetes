@@ -1,0 +1,79 @@
+
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: grafana
+  namespace: grafana-lab
+  labels:
+    app: grafana
+
+spec:
+  replicas: 2
+
+  strategy:
+    type: Recreate
+
+  selector:
+    matchLabels:
+      app: grafana
+
+  template:
+    metadata:
+      labels:
+        app: grafana
+
+    spec:
+      containers:
+        - name: grafana
+          image: grafana/grafana:12.4
+          imagePullPolicy: IfNotPresent
+
+          ports:
+            - containerPort: 3000
+
+          env:
+            - name: GF_PLUGINS_PREINSTALL_DISABLED
+              value: "true"
+
+            - name: GF_DATABASE_WAL
+              value: "true"
+
+            - name: GF_DATABASE_QUERY_RETRIES
+              value: "5"
+
+            - name: GF_DATABASE_TRANSACTION_RETRIES
+              value: "10"
+
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+
+            limits:
+              cpu: "1000m"
+              memory: "768Mi"
+
+          startupProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 180
+
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
